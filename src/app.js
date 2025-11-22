@@ -5,16 +5,12 @@ import User from "./models/user.js";
 const app = express();
 
 // middleware for parsing JSON body
-app.use(express.json());
+app.use(express.json())
 
 app.post("/signup", async (req, res) => {
   try {
     // Creating new instance of user model
-    const user = new User({
-      firstName: "viha",
-      lastName: "shah",
-      email: "viha@gmail.com",
-    });
+    const user = new User(req.body);
 
     await user.save();
 
