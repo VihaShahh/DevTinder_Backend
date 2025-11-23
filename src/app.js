@@ -108,6 +108,67 @@ app.get("/users", async (req, res) => {
 });
 
 // =========================
+// Update user by Id
+// =========================
+
+app.patch("/user/:id", async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    // Find and update
+    const updatedUser = await User.findByIdAndUpdate(
+      userId, 
+      req.body, 
+      {
+        new: true,        // return updated document
+      }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+      data: updatedUser,
+    });
+
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: "Failed to update user",
+      error: error.message
+    });
+  }
+});
+
+// =========================
+// Delete user by Id
+// =========================
+app.delete("/user/:id" , async(req,res) =>{
+  const userId = req.params.id
+  try{
+    const deleteUser = await User.findByIdAndDelete(userId)
+    return res.status(200).json({
+      success: true,
+      message: "User deleted successfully", 
+      data: deleteUser
+    })
+  }
+    catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Couldn't fetch user",
+      error: error.message,
+    });
+  }
+  })
+
+// =========================
 // Start Server After DB
 // =========================
 const startServer = async () => {
