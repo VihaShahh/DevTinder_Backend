@@ -31,6 +31,34 @@ app.post("/signup", async (req, res) => {
 });
 
 // =========================
+// POST: Find user by Id
+// =========================
+
+app.get("/user/:id", async(req,res) =>{
+  try{
+    const userId = req.params.id 
+    const user = await User.findById(userId)
+    if(!user){
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      })
+    }
+      return res.status(200).json({
+        success: true,
+        data: user
+      })
+    
+  }catch(error){
+    return res.status(400).json({
+      success: false,
+      message: "Invalid user id",
+      error: error.message
+    })
+  }
+})
+
+// =========================
 // GET: Find Users by emailId
 // =========================
 app.get("/allUsers", async (req, res) => {
