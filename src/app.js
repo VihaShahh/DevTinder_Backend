@@ -4,12 +4,14 @@ import User from "./models/user.js";
 
 const app = express();
 
-// middleware for parsing JSON body
-app.use(express.json())
+// Middleware for parsing JSON
+app.use(express.json());
 
+// =========================
+// POST: Create User
+// =========================
 app.post("/signup", async (req, res) => {
   try {
-    // Creating new instance of user model
     const user = new User(req.body);
 
     await user.save();
@@ -28,7 +30,58 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-// starting server only after DB connection
+// =========================
+// GET: Find Users by emailId
+// =========================
+app.get("/allUsers", async (req, res) => {
+  try {
+    const userEmail = req.query.emailId;
+
+    const users = await User.find({ emailId: userEmail });
+
+    if (users.length == 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No users found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: users,
+    });
+
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: "Couldn't fetch users",
+      error: error.message,
+    });
+  }
+});
+
+// =========================
+// GET: Fetch All Users
+// =========================
+app.get("/users", async (req, res) => {
+  try {
+    const users = await User.find({});
+    return res.status(200).json({
+      success: true,
+      data: users,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Couldn't fetch users",
+      error: error.message,
+    });
+  }
+});
+
+// =========================
+// Start Server After DB
+// =========================
 const startServer = async () => {
   try {
     await connectDb();
