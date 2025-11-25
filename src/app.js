@@ -1,4 +1,5 @@
 import express from "express";
+import mongoose from "mongoose";
 import connectDb from "../src/config/database.js";
 import User from "./models/user.js";
 
@@ -6,6 +7,17 @@ const app = express();
 
 // Middleware for parsing JSON
 app.use(express.json());
+
+
+// Ensure indexes are created after DB connection
+mongoose.connection.on("connected", async () => {
+  try {
+    await User.syncIndexes();
+    console.log("Indexes synchronized!");
+  } catch (err) {
+    console.error("Index sync error:", err.message);
+  }
+});
 
 // =========================
 // POST: Create User
@@ -22,6 +34,15 @@ app.post("/signup", async (req, res) => {
       data: user,
     });
   } catch (error) {
+
+    // Duplicate Email Handling
+    if (error.code == 11000) {
+      return res.status(400).json({
+        success: false,
+        message: "Email already exists",
+      });
+    }
+
     return res.status(500).json({
       success: false,
       message: "Something went wrong",
@@ -31,7 +52,7 @@ app.post("/signup", async (req, res) => {
 });
 
 // =========================
-// POST: Find user by Id
+// GET: Find user by Id
 // =========================
 
 app.get("/user/:id", async(req,res) =>{
@@ -48,7 +69,7 @@ app.get("/user/:id", async(req,res) =>{
         success: true,
         data: user
       })
-    
+
   }catch(error){
     return res.status(400).json({
       success: false,
@@ -108,7 +129,7 @@ app.get("/users", async (req, res) => {
 });
 
 // =========================
-// Update user by Id
+// PATCH: Update User by Id
 // =========================
 
 app.patch("/user/:id", async (req, res) => {
@@ -138,6 +159,15 @@ app.patch("/user/:id", async (req, res) => {
     });
 
   } catch (error) {
+
+    // Email duplicate during update
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: "Email already exists",
+      });
+    }
+
     return res.status(400).json({
       success: false,
       message: "Failed to update user",
@@ -155,7 +185,7 @@ app.delete("/user/:id" , async(req,res) =>{
     const deleteUser = await User.findByIdAndDelete(userId)
     return res.status(200).json({
       success: true,
-      message: "User deleted successfully", 
+      message: "User deleted successfully",
       data: deleteUser
     })
   }
