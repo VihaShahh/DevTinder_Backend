@@ -31,7 +31,7 @@ const userSchema = new mongoose.Schema({
  gender:{
     type : String,
     validate(value){
-      if(!["male", "female", "other"].includes(value.lowercase())){
+      if(!["male", "female", "other"].includes(value.toLowerCase())){
          throw new Error("Gender data is not valid")
       }
     }
@@ -51,6 +51,9 @@ const userSchema = new mongoose.Schema({
  skills:{
    type: [String]
  }
-})
+},{
+   timestamps : true
+}
+)
 const User = mongoose.model("users",userSchema)
 export default User 

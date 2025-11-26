@@ -141,7 +141,8 @@ app.patch("/user/:id", async (req, res) => {
       userId, 
       req.body, 
       {
-        new: true,        // return updated document
+       returnDocument: "after",  // returns updated user
+  runValidators: true //run schema validators on update
       }
     );
 
