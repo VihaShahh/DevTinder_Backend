@@ -55,22 +55,22 @@ app.post("/signup", async (req, res) => {
 // GET: Find user by Id
 // =========================
 
-app.get("/user/:id", async(req,res) =>{
-  try{
-    const userId = req.params.id 
+app.get("/user/:id", async (req, res) => {
+  try {
+    const userId = req.params.id
     const user = await User.findById(userId)
-    if(!user){
+    if (!user) {
       return res.status(404).json({
         success: false,
         message: "User not found"
       })
     }
-      return res.status(200).json({
-        success: true,
-        data: user
-      })
+    return res.status(200).json({
+      success: true,
+      data: user
+    })
 
-  }catch(error){
+  } catch (error) {
     return res.status(400).json({
       success: false,
       message: "Invalid user id",
@@ -136,13 +136,33 @@ app.patch("/user/:id", async (req, res) => {
   try {
     const userId = req.params.id;
 
+    const ALLOWED_UPDATES = [
+      "photoURL",
+      "about",
+      "gender",
+      "skills",
+      "firstName",
+      "lastName",
+      "age",
+      "userId"
+    ]
+    const data = req.body
+
+    const isUpdateAllowed = Object.keys(data).every((key) => ALLOWED_UPDATES.includes(key))
+
+    if (!isUpdateAllowed) {
+      return res.status(400).json({
+        success: false,
+        message: "update not allowed"
+      })
+    }
     // Find and update
     const updatedUser = await User.findByIdAndUpdate(
-      userId, 
-      req.body, 
+      userId,
+      data,
       {
-       returnDocument: "after",  // returns updated user
-  runValidators: true //run schema validators on update
+        returnDocument: "after",  // returns updated user
+        runValidators: true //run schema validators on update
       }
     );
 
@@ -180,9 +200,9 @@ app.patch("/user/:id", async (req, res) => {
 // =========================
 // Delete user by Id
 // =========================
-app.delete("/user/:id" , async(req,res) =>{
+app.delete("/user/:id", async (req, res) => {
   const userId = req.params.id
-  try{
+  try {
     const deleteUser = await User.findByIdAndDelete(userId)
     return res.status(200).json({
       success: true,
@@ -190,14 +210,14 @@ app.delete("/user/:id" , async(req,res) =>{
       data: deleteUser
     })
   }
-    catch (error) {
+  catch (error) {
     return res.status(500).json({
       success: false,
       message: "Couldn't fetch user",
       error: error.message,
     });
   }
-  })
+})
 
 // =========================
 // Start Server After DB
