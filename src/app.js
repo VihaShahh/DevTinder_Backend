@@ -2,6 +2,8 @@ import express from "express";
 import mongoose from "mongoose";
 import connectDb from "../src/config/database.js";
 import User from "./models/user.js";
+import { validateSignup } from "./middleware/middleware.js";
+import bcrypt from "bcrypt"
 
 const app = express();
 
@@ -13,7 +15,7 @@ app.use(express.json());
 mongoose.connection.on("connected", async () => {
   try {
     await User.syncIndexes();
-    console.log("Indexes synchronized!");
+    //console.log("Indexes synchronized!");
   } catch (err) {
     console.error("Index sync error:", err.message);
   }
@@ -22,10 +24,18 @@ mongoose.connection.on("connected", async () => {
 // =========================
 // POST: Create User
 // =========================
-app.post("/signup", async (req, res) => {
+app.post("/signup", validateSignup, async (req, res) => {
   try {
-    const user = new User(req.body);
 
+    //encrypt the password
+    const { firstName, lastName, emailId, password } = req.body
+    const hashedPassword = await bcrypt.hash(password, 10)
+    const user = new User({
+      firstName,
+      lastName,
+      emailId,
+      password: hashedPassword
+    });
     await user.save();
 
     return res.status(201).json({
