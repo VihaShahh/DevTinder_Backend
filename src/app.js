@@ -1,6 +1,7 @@
 import express from "express";
 import mongoose from "mongoose";
 import connectDb from "../src/config/database.js";
+import validator from "validator";
 import User from "./models/user.js";
 import { validateSignup } from "./middleware/middleware.js";
 import bcrypt from "bcrypt"
@@ -61,6 +62,55 @@ app.post("/signup", validateSignup, async (req, res) => {
   }
 });
 
+
+// =========================
+// POST: Login User
+// =========================  
+app.post("/login", async (req, res) => {
+  try {
+    const { emailId, password } = req.body;
+
+    if (!emailId) {
+      return res.status(400).json({ success: false, message: "Email id is required" });
+    }
+
+    if (!validator.isEmail(emailId)) {
+      return res.status(400).json({ success: false, message: "Invalid email format" });
+    }
+
+    if (!password) {
+      return res.status(400).json({ success: false, message: "Password is required" });
+    }
+
+    const user = await User.findOne({ emailId });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Email id not found"
+      });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid password"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "User logged in successfully"
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error"
+    });
+  }
+});
 // =========================
 // GET: Find user by Id
 // =========================
