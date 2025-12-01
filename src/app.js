@@ -5,8 +5,11 @@ import validator from "validator";
 import User from "./models/user.js";
 import { validateSignup } from "./middleware/middleware.js";
 import bcrypt from "bcrypt"
+import cookieParser from "cookie-parser";
+import jwt from "jsonwebtoken"
 
 const app = express();
+app.use(cookieParser())
 
 // Middleware for parsing JSON
 app.use(express.json());
@@ -98,12 +101,17 @@ app.post("/login", async (req, res) => {
         message: "Invalid password"
       });
     }
-
-    return res.status(200).json({
-      success: true,
-      message: "User logged in successfully"
-    });
-
+    if (isPasswordValid) {
+      const token = jwt.sign({ _id: user._id }, "Dev@Tinder@124")
+      res.cookie("token", "rv8y7g56g4ny28qym75v6cxn7nt4v3bo")
+      console.log(token)
+      // create a jwt token
+      //add the token to cookie and send the response back to the browser.
+      return res.status(200).json({
+        success: true,
+        message: "User logged in successfully"
+      });
+    }
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -111,6 +119,21 @@ app.post("/login", async (req, res) => {
     });
   }
 });
+
+//// =========================
+// GET: User Profile
+// ===========================
+app.get("/profile", async (req, res) => {
+  const cookies = req.cookies
+  const token = cookies
+
+  console.log(cookies)
+  return res.status(200).json({
+    success: true,
+    message: "User profile fetched successfully"
+  })
+})
+
 // =========================
 // GET: Find user by Id
 // =========================
