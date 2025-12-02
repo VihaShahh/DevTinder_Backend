@@ -103,8 +103,7 @@ app.post("/login", async (req, res) => {
     }
     if (isPasswordValid) {
       const token = jwt.sign({ _id: user._id }, "Dev@Tinder@124")
-      res.cookie("token", "rv8y7g56g4ny28qym75v6cxn7nt4v3bo")
-      console.log(token)
+      res.cookie("token", token);
       // create a jwt token
       //add the token to cookie and send the response back to the browser.
       return res.status(200).json({
@@ -120,19 +119,46 @@ app.post("/login", async (req, res) => {
   }
 });
 
-//// =========================
+// =========================
 // GET: User Profile
 // ===========================
 app.get("/profile", async (req, res) => {
-  const cookies = req.cookies
-  const token = cookies
+  try {
+    const token = req.cookies.token;   // get token string
 
-  console.log(cookies)
-  return res.status(200).json({
-    success: true,
-    message: "User profile fetched successfully"
-  })
-})
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "No token found"
+      });
+    }
+
+    const decodedToken = jwt.verify(token, "Dev@Tinder@124");
+    const userId = decodedToken._id;
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "User profile fetched successfully",
+      data: user
+    });
+
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      message: "Invalid or expired token",
+      error: error.message
+    });
+  }
+});
 
 // =========================
 // GET: Find user by Id
