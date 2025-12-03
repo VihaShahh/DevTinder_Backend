@@ -7,7 +7,7 @@ import { validateSignup } from "./middleware/middleware.js";
 import bcrypt from "bcrypt"
 import cookieParser from "cookie-parser";
 import jwt from "jsonwebtoken"
-
+import { userAuth } from "./middleware/middleware.js"
 const app = express();
 app.use(cookieParser())
 
@@ -87,28 +87,21 @@ app.post("/login", async (req, res) => {
 
     const user = await User.findOne({ emailId });
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "Email id not found"
-      });
+      return res.status(404).json({ success: false, message: "Email not found" });
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordValid) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid password"
-      });
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
+      return res.status(401).json({ success: false, message: "Invalid password" });
     }
-    if (isPasswordValid) {
+    if (isValidPassword) {
       const token = jwt.sign({ _id: user._id }, "Dev@Tinder@124")
       res.cookie("token", token);
       // create a jwt token
       //add the token to cookie and send the response back to the browser.
       return res.status(200).json({
         success: true,
-        message: "User logged in successfully"
+        message: "Login successful",
       });
     }
   } catch (error) {
@@ -120,213 +113,193 @@ app.post("/login", async (req, res) => {
 });
 
 // =========================
-// GET: User Profile
-// ===========================
-app.get("/profile", async (req, res) => {
-  try {
-    const token = req.cookies.token;   // get token string
+// GET: User Profile (Protected)
+// =========================  
 
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "No token found"
-      });
-    }
-
-    const decodedToken = jwt.verify(token, "Dev@Tinder@124");
-    const userId = decodedToken._id;
-
-    const user = await User.findById(userId);
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found"
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "User profile fetched successfully",
-      data: user
-    });
-
-  } catch (error) {
-    return res.status(401).json({
-      success: false,
-      message: "Invalid or expired token",
-      error: error.message
-    });
-  }
+app.get("/profile", userAuth, (req, res) => {
+  return res.status(200).json({
+    success: true,
+    message: "User profile fetched successfully",
+    data: req.user
+  });
 });
 
 // =========================
-// GET: Find user by Id
+// POST: Send the Connection Request
 // =========================
 
-app.get("/user/:id", async (req, res) => {
-  try {
-    const userId = req.params.id
-    const user = await User.findById(userId)
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found"
-      })
-    }
-    return res.status(200).json({
-      success: true,
-      data: user
-    })
-
-  } catch (error) {
-    return res.status(400).json({
-      success: false,
-      message: "Invalid user id",
-      error: error.message
-    })
-  }
+app.post("/sendConnectionRequest", userAuth, async (req, res) => {
+  const user = req.user;
+  res.send("Connection request sent successfully to " + user.firstName)
 })
 
-// =========================
-// GET: Find Users by emailId
-// =========================
-app.get("/allUsers", async (req, res) => {
-  try {
-    const userEmail = req.query.emailId;
+// // =========================
+// // GET: Find user by Id
+// // =========================
 
-    const users = await User.find({ emailId: userEmail });
+// app.get("/user/:id", async (req, res) => {
+//   try {
+//     const userId = req.params.id
+//     const user = await User.findById(userId)
+//     if (!user) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "User not found"
+//       })
+//     }
+//     return res.status(200).json({
+//       success: true,
+//       data: user
+//     })
 
-    if (users.length == 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No users found",
-      });
-    }
+//   } catch (error) {
+//     return res.status(400).json({
+//       success: false,
+//       message: "Invalid user id",
+//       error: error.message
+//     })
+//   }
+// })
 
-    return res.status(200).json({
-      success: true,
-      data: users,
-    });
+// // =========================
+// // GET: Find Users by emailId
+// // =========================
+// app.get("/allUsers", async (req, res) => {
+//   try {
+//     const userEmail = req.query.emailId;
 
-  } catch (error) {
-    return res.status(400).json({
-      success: false,
-      message: "Couldn't fetch users",
-      error: error.message,
-    });
-  }
-});
+//     const users = await User.find({ emailId: userEmail });
 
-// =========================
-// GET: Fetch All Users
-// =========================
-app.get("/users", async (req, res) => {
-  try {
-    const users = await User.find({});
-    return res.status(200).json({
-      success: true,
-      data: users,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Couldn't fetch users",
-      error: error.message,
-    });
-  }
-});
+//     if (users.length == 0) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "No users found",
+//       });
+//     }
 
-// =========================
-// PATCH: Update User by Id
-// =========================
+//     return res.status(200).json({
+//       success: true,
+//       data: users,
+//     });
 
-app.patch("/user/:id", async (req, res) => {
-  try {
-    const userId = req.params.id;
+//   } catch (error) {
+//     return res.status(400).json({
+//       success: false,
+//       message: "Couldn't fetch users",
+//       error: error.message,
+//     });
+//   }
+// });
 
-    const ALLOWED_UPDATES = [
-      "photoURL",
-      "about",
-      "gender",
-      "skills",
-      "firstName",
-      "lastName",
-      "age",
-      "userId"
-    ]
-    const data = req.body
+// // =========================
+// // GET: Fetch All Users
+// // =========================
+// app.get("/users", async (req, res) => {
+//   try {
+//     const users = await User.find({});
+//     return res.status(200).json({
+//       success: true,
+//       data: users,
+//     });
+//   } catch (error) {
+//     return res.status(500).json({
+//       success: false,
+//       message: "Couldn't fetch users",
+//       error: error.message,
+//     });
+//   }
+// });
 
-    const isUpdateAllowed = Object.keys(data).every((key) => ALLOWED_UPDATES.includes(key))
+// // =========================
+// // PATCH: Update User by Id
+// // =========================
 
-    if (!isUpdateAllowed) {
-      return res.status(400).json({
-        success: false,
-        message: "update not allowed"
-      })
-    }
-    // Find and update
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      data,
-      {
-        returnDocument: "after",  // returns updated user
-        runValidators: true //run schema validators on update
-      }
-    );
+// app.patch("/user/:id", async (req, res) => {
+//   try {
+//     const userId = req.params.id;
 
-    if (!updatedUser) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found"
-      });
-    }
+//     const ALLOWED_UPDATES = [
+//       "photoURL",
+//       "about",
+//       "gender",
+//       "skills",
+//       "firstName",
+//       "lastName",
+//       "age",
+//       "userId"
+//     ]
+//     const data = req.body
 
-    return res.status(200).json({
-      success: true,
-      message: "User updated successfully",
-      data: updatedUser,
-    });
+//     const isUpdateAllowed = Object.keys(data).every((key) => ALLOWED_UPDATES.includes(key))
 
-  } catch (error) {
+//     if (!isUpdateAllowed) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "update not allowed"
+//       })
+//     }
+//     // Find and update
+//     const updatedUser = await User.findByIdAndUpdate(
+//       userId,
+//       data,
+//       {
+//         returnDocument: "after",  // returns updated user
+//         runValidators: true //run schema validators on update
+//       }
+//     );
 
-    // Email duplicate during update
-    if (error.code === 11000) {
-      return res.status(400).json({
-        success: false,
-        message: "Email already exists",
-      });
-    }
+//     if (!updatedUser) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "User not found"
+//       });
+//     }
 
-    return res.status(400).json({
-      success: false,
-      message: "Failed to update user",
-      error: error.message
-    });
-  }
-});
+//     return res.status(200).json({
+//       success: true,
+//       message: "User updated successfully",
+//       data: updatedUser,
+//     });
 
-// =========================
-// Delete user by Id
-// =========================
-app.delete("/user/:id", async (req, res) => {
-  const userId = req.params.id
-  try {
-    const deleteUser = await User.findByIdAndDelete(userId)
-    return res.status(200).json({
-      success: true,
-      message: "User deleted successfully",
-      data: deleteUser
-    })
-  }
-  catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Couldn't fetch user",
-      error: error.message,
-    });
-  }
-})
+//   } catch (error) {
+
+//     // Email duplicate during update
+//     if (error.code === 11000) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Email already exists",
+//       });
+//     }
+
+//     return res.status(400).json({
+//       success: false,
+//       message: "Failed to update user",
+//       error: error.message
+//     });
+//   }
+// });
+
+// // =========================
+// // Delete user by Id
+// // =========================
+// app.delete("/user/:id", async (req, res) => {
+//   const userId = req.params.id
+//   try {
+//     const deleteUser = await User.findByIdAndDelete(userId)
+//     return res.status(200).json({
+//       success: true,
+//       message: "User deleted successfully",
+//       data: deleteUser
+//     })
+//   }
+//   catch (error) {
+//     return res.status(500).json({
+//       success: false,
+//       message: "Couldn't fetch user",
+//       error: error.message,
+//     });
+//   }
+// })
 
 // =========================
 // Start Server After DB
