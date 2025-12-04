@@ -95,8 +95,11 @@ app.post("/login", async (req, res) => {
       return res.status(401).json({ success: false, message: "Invalid password" });
     }
     if (isValidPassword) {
-      const token = jwt.sign({ _id: user._id }, "Dev@Tinder@124")
-      res.cookie("token", token);
+      const token = jwt.sign({ _id: user._id }, "Dev@Tinder@124", { expiresIn: '1d' })
+      res.cookie("token", token, {
+        httpOnly: true, expires: new Date(Date.now() + 24 * 60 * 60 * 1000
+        )
+      });
       // create a jwt token
       //add the token to cookie and send the response back to the browser.
       return res.status(200).json({
