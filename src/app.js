@@ -90,23 +90,21 @@ app.post("/login", async (req, res) => {
       return res.status(404).json({ success: false, message: "Email not found" });
     }
 
-    const isValidPassword = await bcrypt.compare(password, user.password);
+    const isValidPassword = await user.comparePassword(password);
     if (!isValidPassword) {
       return res.status(401).json({ success: false, message: "Invalid password" });
     }
-    if (isValidPassword) {
-      const token = jwt.sign({ _id: user._id }, "Dev@Tinder@124", { expiresIn: '1d' })
-      res.cookie("token", token, {
-        httpOnly: true, expires: new Date(Date.now() + 24 * 60 * 60 * 1000
-        )
-      });
-      // create a jwt token
-      //add the token to cookie and send the response back to the browser.
-      return res.status(200).json({
-        success: true,
-        message: "Login successful",
-      });
-    }
+    const token = user.generateToken();
+
+    // Set token in cookies
+    res.cookie("token", token, {
+      httpOnly: true,
+      expires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 1 day
+    });
+    return res.status(200).json({
+      success: true,
+      message: "Login successful",
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
