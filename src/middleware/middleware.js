@@ -1,4 +1,4 @@
-import validateSignupData from "../utils/validation.js";
+import { validateSignupData } from "../utils/validation.js";
 import jwt from "jsonwebtoken"
 import User from "../models/user.js"
 export const validateSignup = (req, res, next) => {
