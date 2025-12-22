@@ -7,11 +7,6 @@ import User from "../models/user.js"
 // =========================
 // POST: Send the Connection Request - swipe left-right
 // =========================
-
-// requestRouter.post("/sendConnectionRequest", userAuth, async (req, res) => {
-//     const user = req.user;
-//     res.send("Connection request sent successfully to " + user.firstName)
-// })
 requestRouter.post("/request/send/:status/:toUserId", userAuth, async (req, res) => {
     try {
         const fromUserId = req.user._id;
@@ -63,5 +58,38 @@ requestRouter.post("/request/send/:status/:toUserId", userAuth, async (req, res)
     }
 });
 
+requestRouter.post("/request/review/:status/:requestId", userAuth, async (req, res) => {
+    try {
+        const loggedInUser = req.user
+        const { requestId, status } = req.params
+        const allowedstatus = ["accepted", "rejected"]
+        if (!allowedstatus.includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid status type" + status
+            })
+        }
+        const connectionRequest = await ConnectionRequest.findOne({
+            _id: requestId,
+            toUserId: loggedInUser._id,
+            status: "interested",
+        })
+        if (!connectionRequest) {
+            return res.status(404).json({
+                success: false,
+                message: "Connection request not found"
+            })
+        }
 
+        connectionRequest.status = status
+        const data = await connectionRequest.save()
+        res.status(200).json({
+            success: true,
+            message: "Connection request " + status
+                + " successfully"
+        })
+    } catch (err) {
+        res.status(400).send("ERROR: " + err.message);
+    }
+})
 export default requestRouter
