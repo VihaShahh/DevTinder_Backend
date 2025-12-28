@@ -2,6 +2,7 @@ import express from "express";
 import { userAuth } from "../middleware/middleware.js"
 const userRouter = express.Router();
 import ConnectionRequest from "../models/connectionRequest.js"
+import User from "../models/user.js"
 
 const userSafeFields = ["firstName", "lastName", "photoUrl", "about", "skills"]
 
@@ -53,6 +54,52 @@ userRouter.get("/users/connections", userAuth, async (req, res) => {
         res.status(400).send("ERROR: " + err.message);
     }
 });
+
+//get the feed for the logged in user
+userRouter.get("/feed", userAuth, async (req, res) => {
+    try {
+
+        const loggedInUser = req.user;
+
+        const connectionRequests = await ConnectionRequest.find({
+            $or: [
+                { fromUserId: loggedInUser._id },
+                { toUserId: loggedInUser._id }
+            ]
+        }).select("fromUserId toUserId").populate("fromUserId", "firstName").populate("toUserId", "firstName")
+
+        const hideUsersFromFeed = new Set()
+        connectionRequests.forEach((req) => {
+            hideUsersFromFeed.add(req.fromUserId._id.toString())
+            hideUsersFromFeed.add(req.toUserId._id.toString())
+        })
+
+        const users = await User.find({
+            $and: [
+                {
+                    _id: {
+                        $nin: Array.from(hideUsersFromFeed)
+                    }
+                },
+                {
+                    _id: {
+                        $ne: loggedInUser._id
+                    }
+                },
+            ],
+        }).select(userSafeFields)
+
+        res.json({
+            success: true,
+            users,
+        })
+    } catch (err) {
+        res.status(400).json({
+            success: false,
+            message: err.message
+        })
+    }
+})
 
 export default userRouter;
 
