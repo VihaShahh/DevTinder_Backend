@@ -64,7 +64,7 @@ const userSchema = new mongoose.Schema(
       photoUrl: {
          type: String,
          default:
-            "https://stock.adobe.com/in/search?k=default+profile+picture&asset_id=633072621",
+            "https://cdn-icons-png.flaticon.com/512/149/149071.png",
          validate: {
             validator: (value) =>
                validator.isURL(value, { require_protocol: true }),
