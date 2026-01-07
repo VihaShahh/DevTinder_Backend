@@ -16,7 +16,7 @@ export const userAuth = async (req, res, next) => {
         const token = req.cookies.token;
 
         if (!token) {
-            return res.status(401).json({ success: false, message: "No token found" });
+            return res.status(401).json({ success: false, message: "Please LogIn" });
         }
 
         const decoded = jwt.verify(token, "Dev@Tinder@124");
