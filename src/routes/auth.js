@@ -1,24 +1,27 @@
-import express from "express"
+import express from "express";
 import validator from "validator";
 import { validateSignup } from "../middleware/middleware.js";
 import User from "../models/user.js";
-import bcrypt from "bcrypt"
-const authRouter = express.Router()
+import bcrypt from "bcrypt";
+
+const authRouter = express.Router();
 
 // =========================
 // POST: Create User
 // =========================
 authRouter.post("/signup", validateSignup, async (req, res) => {
     try {
+        const { firstName, lastName, emailId, password, age, gender } = req.body;
 
-        //encrypt the password
-        const { firstName, lastName, emailId, password } = req.body
-        const hashedPassword = await bcrypt.hash(password, 10)
+        const hashedPassword = await bcrypt.hash(password, 10);
+
         const user = new User({
             firstName,
             lastName,
             emailId,
-            password: hashedPassword
+            password: hashedPassword,
+            age,
+            gender: gender?.toLowerCase(),
         });
         await user.save();
 
@@ -79,8 +82,8 @@ authRouter.post("/login", async (req, res) => {
         // Set token in cookies
         res.cookie("token", token, {
             httpOnly: true,
-            sameSite: "lax",   
-            secure: false,     
+            sameSite: "lax",
+            secure: false,
             expires: new Date(Date.now() + 24 * 60 * 60 * 1000)
         });
         return res.status(200).json({
