@@ -23,28 +23,27 @@ profileRouter.get("/profile/view", userAuth, (req, res) => {
 // =========================  
 profileRouter.patch("/profile/update", userAuth, async (req, res) => {
     try {
-        if (!validateProfileData(req)) {
-            throw new Error("Invalid Edit Request");
-        }
+        const allowedFields = ["firstName", "lastName", "age", "gender", "about", "photoUrl"];
 
-        const loggedInUser = req.user;
+        allowedFields.forEach(key => {
+            if (req.body[key] !== undefined) {
+                req.user[key] = req.body[key];
+            }
+        });
 
-        Object.keys(req.body).forEach((key) => (loggedInUser[key] = req.body[key]))
-        await loggedInUser.save()
+        await req.user.save();
 
         res.status(200).json({
             success: true,
-            message: "Profile update successfully",
-            data: loggedInUser
+            message: "Profile updated successfully",
+            data: req.user
         });
 
     } catch (err) {
-        res.status(400).json({
-            success: false,
-            message: err.message
-        });
+        res.status(400).json({ success: false, message: err.message });
     }
 });
+
 
 // =========================
 // PATCH: Reset Password by Email
