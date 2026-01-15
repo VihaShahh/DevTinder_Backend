@@ -4,7 +4,16 @@ const userRouter = express.Router();
 import ConnectionRequest from "../models/connectionRequest.js"
 import User from "../models/user.js"
 
-const userSafeFields = ["firstName", "lastName", "photoUrl", "about", "skills"]
+const userSafeFields = [
+    "firstName",
+    "lastName",
+    "photoUrl",
+    "about",
+    "skills",
+    "gender",
+    "age"
+];
+
 
 //get all the pending connection requests for the logged in user
 userRouter.get("/user/requets/received", userAuth, async (req, res) => {
