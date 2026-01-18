@@ -16,7 +16,7 @@ const userSafeFields = [
 
 
 //get all the pending connection requests for the logged in user
-userRouter.get("/user/requets/received", userAuth, async (req, res) => {
+userRouter.get("/user/requests/received", userAuth, async (req, res) => {
     try {
         const loggedInUser = req.user;
         const connectionRequests = await ConnectionRequest.find({
