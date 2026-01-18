@@ -23,12 +23,20 @@ authRouter.post("/signup", validateSignup, async (req, res) => {
             age,
             gender: gender?.toLowerCase(),
         });
-        await user.save();
+        const savedUser = await user.save();
+        const token = savedUser.generateToken();
+
+        res.cookie("token", token, {
+            httpOnly: true,
+            sameSite: "lax",
+            secure: false,
+            expires: new Date(Date.now() + 8 * 3600000)
+        });
 
         return res.status(201).json({
             success: true,
             message: "User created successfully",
-            data: user,
+            data: savedUser,
         });
     } catch (error) {
 
@@ -51,7 +59,7 @@ authRouter.post("/signup", validateSignup, async (req, res) => {
 
 // =========================
 // POST: Login User
-// =========================  
+// =========================
 authRouter.post("/login", async (req, res) => {
     try {
         const { emailId, password } = req.body;
@@ -97,12 +105,21 @@ authRouter.post("/login", async (req, res) => {
             message: error.message || "Internal server error"
         });
     }
-})
-authRouter.post("/logout", async (req, res) => {
-    res.cookie("token", null, {
-        expires: new Date(Date.now())
-    })
-    res.send("Logged out successfully")
 });
 
-export default authRouter
+// =========================
+// POST: Logout User
+// =========================
+authRouter.post("/logout", (req, res) => {
+    res.cookie("token", null, {
+        httpOnly: true,
+        expires: new Date(Date.now())
+    });
+
+    return res.status(200).json({
+        success: true,
+        message: "Logged out successfully"
+    });
+});
+
+export default authRouter;
